@@ -8,7 +8,7 @@ The project will expand as I develop new applications for this data.
 
 ---
 
-## Features:
+## Features
 - Fully normalized SQLite database for hockey teams, players, games, goals, assists, and stats
 - Automated scripts for populating data
 - Structured tables with foreign key relationships for accurate data modeling
@@ -29,3 +29,4 @@ The project will expand as I develop new applications for this data.
 - Applications: all files and folders that use the data in some way
 
 - relevant documentation can be found in the subfolders
+
