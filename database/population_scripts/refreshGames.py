@@ -3,15 +3,18 @@ from nhlpy import NHLClient
 from enum import IntEnum
 import time
 import random
+import os
 from datetime import date, timedelta
 from game_data_helpers import safe_call, build_game_row, build_skaters_and_goalies, \
     process_play_by_play, process_goals_and_assists, SkaterStat, ensure_player, insert_game_data
 
 def main():
     try:
+        
         client = NHLClient()
-
-        conn = sqlite3.connect("hockey.db")
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DB_PATH = os.path.join(BASE_DIR, "database", "hockey.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         # Get all regular season games
@@ -35,15 +38,15 @@ def main():
                 insert_game_data(cursor, game_row, skater_rows, goalie_rows, goal_rows, assist_rows)
                 conn.commit()
 
-            cursor.execute("SELECT last_date FROM LastRun WHERE script_name='daily_refresh'")
-
-
+        cursor.execute("SELECT last_date FROM LastUpdate WHERE update_type='game_update'")
         row = cursor.fetchone()
+        print(row)
         last_date = date.fromisoformat(row[0])
         current_date = last_date + timedelta(days=1)
         yesterday_date = date.today() - timedelta(days=1)
 
         while current_date <= yesterday_date:
+            print(current_date.strftime("%Y-%m-%d"))
             process_game_for_date(current_date.strftime("%Y-%m-%d"))
             current_date += timedelta(days=1)
 

@@ -7,12 +7,15 @@ Uses SQLite and updates existing entries if the team already exists.
 
 import sqlite3
 from nhlpy import NHLClient
+import os
 
 def main():
     try:
         client = NHLClient()
 
-        conn = sqlite3.connect("hockey.db")
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DB_PATH = os.path.join(BASE_DIR, "database", "hockey.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         teams = client.teams.teams()

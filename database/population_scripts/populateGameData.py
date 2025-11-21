@@ -14,6 +14,7 @@ import sqlite3
 from nhlpy import NHLClient
 from enum import IntEnum
 import time
+import os
 from datetime import date, timedelta
 from game_data_helpers import safe_call, build_game_row, build_skaters_and_goalies, \
     process_play_by_play, process_goals_and_assists, SkaterStat, insert_game_data, SEASON
@@ -26,7 +27,9 @@ CUTOFF_DATE =  (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
 def main():
     try:
         client = NHLClient()
-        conn = sqlite3.connect("hockey.db")
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DB_PATH = os.path.join(BASE_DIR, "database", "hockey.db")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         game_ids = client.helpers.game_ids_by_season(SEASON, [2])
