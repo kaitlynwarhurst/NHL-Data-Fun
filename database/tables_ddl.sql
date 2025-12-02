@@ -1,42 +1,40 @@
 CREATE TABLE Teams (
-    team_id INTEGER PRIMARY KEY,
+    team_abbrev TEXT PRIMARY KEY,
     team_name TEXT NOT NULL,
-    team_abbreviation TEXT NOT NULL UNIQUE,
-    conference TEXT,      -- e.g., "Eastern", "Western"
-    division TEXT,        -- e.g., "Atlantic", "Central"
-    logo_url TEXT         -- store a link or local path
+    conference TEXT,
+    division TEXT,
+    logo_url TEXT
 );
 
 CREATE TABLE Players (
-    player_id        INTEGER PRIMARY KEY,
-    position_code    TEXT,          -- e.g., C, LW, RW, D, G
+    player_id INTEGER PRIMARY KEY,
+    position_code TEXT,
     first_name TEXT NOT NULL,
-    last_name  TEXT NOT NULL,
-    shoots_catches    TEXT,         -- "L", "R", or "C" (goalies)
-    current_team_id   INTEGER,      -- FK to Teams
-    birthdate         TEXT,         -- store as ISO "YYYY-MM-DD"
-    started           INTEGER,      -- season started or debut year
-    height_inches     INTEGER,      -- total inches
-    weight_lbs        INTEGER,
-    sweater_number    INTEGER,
-    birth_country     TEXT,         -- "CAN", "USA", "SWE", etc.
-    headshot_url      TEXT,         -- URL to headshot image
-
-    FOREIGN KEY (current_team_id) REFERENCES Teams(team_id)
+    last_name TEXT NOT NULL,
+    shoots_catches TEXT,
+    current_team_abbrev TEXT,  
+    birthdate TEXT,
+    height_inches INTEGER,
+    weight_lbs INTEGER,
+    sweater_number INTEGER,
+    birth_country TEXT,
+    headshot_url TEXT,
+    FOREIGN KEY (current_team_abbrev) REFERENCES Teams(team_abbrev)
 );
 
 CREATE TABLE Games (
     game_id INTEGER PRIMARY KEY,
-    game_date TEXT NOT NULL,          -- store as "YYYY-MM-DD"
-    home_team_id INTEGER NOT NULL,
-    away_team_id INTEGER NOT NULL,
+    game_date TEXT NOT NULL,            -- store as "YYYY-MM-DD"
+    home_team_abbrev TEXT NOT NULL,
+    away_team_abbrev TEXT NOT NULL,
     home_score INTEGER,
     away_score INTEGER,
     ot BOOLEAN,
     shootout BOOLEAN,
-    FOREIGN KEY (home_team_id) REFERENCES Teams(team_id),
-    FOREIGN KEY (away_team_id) REFERENCES Teams(team_id)
+    FOREIGN KEY (home_team_abbrev) REFERENCES Teams(team_abbrev),
+    FOREIGN KEY (away_team_abbrev) REFERENCES Teams(team_abbrev)
 );
+
 
 CREATE TABLE Goals (
     goal_id TEXT PRIMARY KEY,
@@ -71,10 +69,11 @@ CREATE TABLE SkaterGameStats (
     blocks INTEGER,
     penalty_minutes INTEGER,
     shots INTEGER,
-    plus_minus INTEGER,
+    plus_minus INTEGER, team_abbrev TEXT,
     PRIMARY KEY (player_id, game_id),
     FOREIGN KEY (player_id) REFERENCES Players(player_id),
-    FOREIGN KEY (game_id) REFERENCES Games(game_id)
+    FOREIGN KEY (game_id) REFERENCES Games(game_id),
+    FOREIGN KEY (team_abbrev) REFERENCES Teams(team_abbrev)
 );
 
 CREATE TABLE GoalieGameStats (
@@ -84,9 +83,10 @@ CREATE TABLE GoalieGameStats (
     saves INTEGER,
     goals_allowed INTEGER,
     shots_against INTEGER,
-    PRIMARY KEY (player_id, game_id),
+    PRIMARY KEY (player_id, game_id), team_abbrev TEXT,
     FOREIGN KEY (player_id) REFERENCES Players(player_id),
-    FOREIGN KEY (game_id) REFERENCES Games(game_id)
+    FOREIGN KEY (game_id) REFERENCES Games(game_id),
+    FOREIGN KEY (team_abbrev) REFERENCES Teams(team_abbrev)
 );
 
 CREATE TABLE LastUpdate (

@@ -22,9 +22,8 @@ def main():
 
         team_rows = [
             (
-                t["franchise_id"],
-                t["name"],
                 t["abbr"],
+                t["name"],
                 t["conference"]["name"],
                 t["division"]["name"],
                 t["logo"]
@@ -36,16 +35,14 @@ def main():
 
         cursor.executemany("""
             INSERT INTO Teams (
-                team_id,
+                team_abbrev,
                 team_name,
-                team_abbreviation,
                 conference,
                 division,
                 logo_url
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(team_id) DO UPDATE SET
+            ) VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(team_abbrev) DO UPDATE SET
             team_name=excluded.team_name,
-            team_abbreviation=excluded.team_abbreviation,
             conference=excluded.conference,
             division=excluded.division,
             logo_url=excluded.logo_url;

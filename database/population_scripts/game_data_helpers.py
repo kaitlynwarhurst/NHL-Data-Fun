@@ -75,7 +75,7 @@ def ensure_player(cursor: sqlite3.Cursor, client: NHLClient, player_id: int):
     Returns:
         None
     """
-    cursor.execute("SELECT current_team_id FROM Players WHERE player_id = ?", (player_id,))
+    cursor.execute("SELECT current_team_abbrev FROM Players WHERE player_id = ?", (player_id,))
     row = cursor.fetchone()
 
     info = safe_call(client.stats.player_career_stats, player_id)
@@ -90,7 +90,7 @@ def ensure_player(cursor: sqlite3.Cursor, client: NHLClient, player_id: int):
     sweater = info.get("sweaterNumber")
     birth_country = info.get("birthCountry")
     headshot = info.get("headshot")
-    new_team = info.get("currentTeamId")
+    new_team = info.get("currentTeamAbbrev")
 
     # Insert if missing
     if row is None:
@@ -98,7 +98,7 @@ def ensure_player(cursor: sqlite3.Cursor, client: NHLClient, player_id: int):
             """
             INSERT INTO Players (
                 player_id, position_code, first_name, last_name,
-                shoots_catches, current_team_id, birthdate,
+                shoots_catches, current_team_abbrev, birthdate,
                 height_inches, weight_lbs, sweater_number, birth_country, headshot_url
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -113,7 +113,7 @@ def ensure_player(cursor: sqlite3.Cursor, client: NHLClient, player_id: int):
         """
         UPDATE Players SET
             position_code=?, first_name=?, last_name=?,
-            shoots_catches=?, current_team_id=?, birthdate=?, height_inches=?,
+            shoots_catches=?, current_team_abbrev=?, birthdate=?, height_inches=?,
             weight_lbs=?, sweater_number=?, birth_country=?, headshot_url=?
         WHERE player_id=?
         """,
@@ -132,13 +132,13 @@ def build_game_row(bs: dict) -> List:
         bs (dict): NHL API boxscore data for a game.
 
     Returns:
-        List: [game_id, game_date, home_team_id, away_team_id, ot (0/1), shootout (0/1)]
+        List: [game_id, game_date, home_team_abbrev, away_team_abbrev, ot (0/1), shootout (0/1)]
     """
     return [
         bs['id'],
         bs["gameDate"],
-        bs["homeTeam"]["id"],
-        bs["awayTeam"]["id"],
+        bs["homeTeam"]["abbrev"],
+        bs["awayTeam"]["abbrev"],
         0 if bs["gameOutcome"]["lastPeriodType"] == "REG" else 1,
         1 if bs["gameOutcome"]["lastPeriodType"] == "SHO" else 0,
     ]
@@ -180,7 +180,7 @@ def build_skaters_and_goalies(
                 gk.get("saves", 0),
                 gk.get("goalsAgainst", 0),
                 gk.get("shotsAgainst", 0),
-                bs[side]["id"]
+                bs[side]["abbrev"]
             ])
 
         # Skaters
@@ -192,8 +192,9 @@ def build_skaters_and_goalies(
                 skater_rows_tmp[idx][SkaterStat.PLAYER_ID] = pid
                 skater_rows_tmp[idx][SkaterStat.GAME_ID] = bs["id"]
                 skater_rows_tmp[idx][SkaterStat.TOI] = sk.get("toi", 0)
+                skater_rows_tmp[idx][SkaterStat.SHOTS] = sk.get("sog", 0)
                 skater_rows_tmp[idx][SkaterStat.PLUS_MINUS] = sk.get("plusMinus", 0)
-                skater_rows_tmp[idx][SkaterStat.TEAM_ID] = bs[side]["id"]
+                skater_rows_tmp[idx][SkaterStat.TEAM_ID] = bs[side]["abbrev"]
                 idx += 1
 
     skater_rows.extend(skater_rows_tmp)
@@ -239,10 +240,10 @@ def process_play_by_play(pbp: dict, skater_dict: Dict[int,int], skater_rows: Lis
             if c in skater_dict:
                 skater_rows[skater_dict[c]][SkaterStat.PENALTY_MINUTES] += dur
 
-        elif t == "shot-on-goal":
-            s = details.get("shootingPlayerId")
-            if s in skater_dict:
-                skater_rows[skater_dict[s]][SkaterStat.SHOTS] += 1
+        # elif t == "shot-on-goal":
+        #     s = details.get("shootingPlayerId")
+        #     if s in skater_dict:
+        #         skater_rows[skater_dict[s]][SkaterStat.SHOTS] += 1
 
 def process_goals_and_assists(story: dict, game_id: int) -> Tuple[List[List], List[List]]:
     """
@@ -311,7 +312,7 @@ def insert_game_data(
     cursor.execute(
         """
         INSERT OR REPLACE INTO Games (
-            game_id, game_date, home_team_id, away_team_id,
+            game_id, game_date, home_team_abbrev, away_team_abbrev,
             ot, shootout
         ) VALUES (?, ?, ?, ?, ?, ?)
         """,
@@ -343,7 +344,7 @@ def insert_game_data(
         INSERT OR REPLACE INTO SkaterGameStats (
             player_id, game_id, toi, faceoff_wins,
             faceoff_losses, hits, blocks,
-            penalty_minutes, shots, plus_minus, team_id
+            penalty_minutes, shots, plus_minus, team_abbrev
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         skater_rows
@@ -353,7 +354,7 @@ def insert_game_data(
         """
         INSERT OR REPLACE INTO GoalieGameStats (
             player_id, game_id, started,
-            saves, goals_allowed, shots_against, team_id
+            saves, goals_allowed, shots_against, team_abbrev
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         goalie_rows

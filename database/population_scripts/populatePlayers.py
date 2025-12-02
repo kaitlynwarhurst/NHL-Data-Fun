@@ -10,7 +10,7 @@ from nhlpy import NHLClient
 import os
 
 # Function to flatten roster
-def flatten_roster(roster, team_id):
+def flatten_roster(roster, team_abbrev):
     """
     Converts a team's roster data from nhlpy into a list of tuples suitable for inserting into the Players table.
 
@@ -30,7 +30,7 @@ def flatten_roster(roster, team_id):
                 p["firstName"]["default"],       # first_name
                 p["lastName"]["default"],        # last_name
                 p.get("shootsCatches"),          # shoots_catches
-                team_id,                         # current_team_id
+                team_abbrev,                         # current_team_id
                 p.get("birthDate"),              # birthdate
                 p.get("heightInInches"),         # height_inches
                 p.get("weightInPounds"),         # weight_lbs
@@ -44,7 +44,7 @@ def main():
     try:
         
         client = NHLClient()
-        
+
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         DB_PATH = os.path.join(BASE_DIR, "database", "hockey.db")
         conn = sqlite3.connect(DB_PATH)
@@ -56,7 +56,7 @@ def main():
         for t in teams:
             roster = client.players.players_by_team(t["abbr"], "20252026")
             
-            player_rows = flatten_roster(roster, t["franchise_id"])
+            player_rows = flatten_roster(roster, t["abbr"])
             
             cursor.executemany("""
                 INSERT OR REPLACE INTO Players (
@@ -65,7 +65,7 @@ def main():
                     first_name,
                     last_name,
                     shoots_catches,
-                    current_team_id,
+                    current_team_abbrev,
                     birthdate,
                     height_inches,
                     weight_lbs,

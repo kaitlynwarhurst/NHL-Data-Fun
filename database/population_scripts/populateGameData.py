@@ -11,6 +11,7 @@ Handles API errors with retries and commits data per game.
 """
 
 import sqlite3
+import json
 from nhlpy import NHLClient
 from enum import IntEnum
 import time
@@ -32,7 +33,10 @@ def main():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        game_ids = client.helpers.game_ids_by_season(SEASON, [2])
+        # game_ids = client.helpers.game_ids_by_season(SEASON, [2])
+        GAME_IDS_PATH = os.path.join(BASE_DIR, "database", "game_ids_20252026.json")
+        with open(GAME_IDS_PATH, "r") as f:
+            game_ids = json.load(f)
 
         for g in game_ids:
             print(f"Processing game {g}...")
